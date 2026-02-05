@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>BGMI UID Test</h2>
+  <input type="text" id="uid" placeholder="Enter UID (e.g. 55506492317)">
+  <button onclick="testVerify()">Verify Now</button>
+  <p id="result">Result will show here...</p>
+
+  <script>
+    async function testVerify() {
+      const uid = document.getElementById('uid').value;
+      const result = document.getElementById('result');
+      result.innerText = "Checking...";
+
+      try {
+        // Netlify function ko call kar rahe hain
+        const res = await fetch(`/.netlify/functions/verify?uid=${uid}`);
+        const data = await res.json();
+        
+        if (data.name) {
+          result.style.color = "green";
+          result.innerText = "Player Name: " + data.name;
+        } else {
+          result.style.color = "red";
+          result.innerText = "Error: " + (data.error || "Not found");
+        }
+      } catch (err) {
+        result.innerText = "Network Error!";
+      }
+    }
+  </script>
+</body>
+</html>
