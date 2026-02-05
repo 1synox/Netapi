@@ -8,29 +8,37 @@ exports.handler = async (event) => {
   }
 
   try {
-    // UniPin Validation API logic
-    // Hum UniPin ko request bhej rahe hain jaise unka apna frontend bhejta hai
-    const response = await axios.post('https://api.unipin.com/v1/gbw/order/validate', {
-      userid: uid,
-      zoneid: "",
-      game: "bgmi"
-    }, {
+    // Naya Endpoint: Yeh UniPin ka internal validation route hai
+    const response = await axios.post('https://www.unipin.com/in/services/get-player-name', 
+    `game_code=bgmi&user_id=${uid}&zone_id=`, // Form data format
+    {
       headers: {
-        'Origin': 'https://www.unipin.com',
-        'Referer': 'https://www.unipin.com/in/bgmi',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G960F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        'Referer': 'https://www.unipin.com/in/bgmi'
       }
     });
 
-    if (response.data && response.data.data) {
+    // UniPin aksar HTML ya JSON mix bhejta hai
+    const responseData = response.data;
+
+    // Agar response mein name hai (UniPin format check)
+    if (responseData && responseData.status === 'success') {
       return {
         statusCode: 200,
-        body: JSON.stringify({ name: response.data.data.username })
+        body: JSON.stringify({ name: responseData.player_name || responseData.data })
       };
     } else {
-      return { statusCode: 404, body: JSON.stringify({ error: "Player not found" }) };
+      return { 
+        statusCode: 404, 
+        body: JSON.stringify({ error: "Invalid UID or UniPin Busy", raw: responseData }) 
+      };
     }
   } catch (error) {
-    return { statusCode: 500, body: JSON.stringify({ error: "Server error or blocked by UniPin" }) };
+    return { 
+      statusCode: 500, 
+      body: JSON.stringify({ error: "Blocked by Firewall", details: error.message }) 
+    };
   }
 };
